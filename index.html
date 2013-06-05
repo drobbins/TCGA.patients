@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="main.css">  
+</head>
+<body>
+    <h1>TCGA Patients</h1>
+    <button onclick="doit()">Do It</button>
+
+    <div id="death">
+        <span>Days to Death</span><span class="reset" style="display: none;">Current filter: <span class="filter"></span></span>
+    </div>
+
+    <div id="site">
+        
+    </div>
+
+    <!-- scripts and shti -->
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="http://nickqizhu.github.io/dc.js/js/d3.js"></script>
+    <script src="http://square.github.io/crossfilter/crossfilter.v1.min.js"></script>
+    <script src="http://nickqizhu.github.io/dc.js/js/dc.js"></script>
+    <script src="https://rawgithub.com/ibl/postmongo/master/postmongo.js"></script>
+    <script>
+        db = new postmongo(parm);
+
+        function doit () { db.patients.find("", function (resp) {
+
+            pt = {};
+
+            var reductor = {
+                a : function reduceAdd(p, v) {
+                  return v.d2d === 0 ? p : p + 1;
+                },
+
+                r : function reduceRemove(p, v) {
+                  return v.d2d === 0 ? p : p - 1;
+                },
+
+                i : function reduceInitial() {
+                  return 0;
+                }
+            };
+
+            var raw = pt.raw = JSON.parse(resp);
+            var patients = pt.patients = crossfilter(raw);
+
+            var byDeath = pt.byDeath = patients.dimension(function (d) {
+                d.d2d = typeof d.days_to_death === "number" ? d.days_to_death : 0;
+                return d.d2d;
+            });
+            byDeath.filter(function (d) { return d > 0});
+            var deathGroup = pt.deathGroup = byDeath.group().reduce(reductor.a, reductor.r, reductor.i);
+
+            var bySite = pt.bySite = patients.dimension(function (d) { return d.tumor_tissue_site; });
+            var siteGroup = pt.siteGroup = bySite.group().reduceCount();
+
+            dc.barChart("#death")
+                .width(800)
+                .height(200)
+                .dimension(byDeath)
+                .group(deathGroup)
+                .x(d3.scale.linear().domain([0, byDeath.top(1)[0].days_to_death]));
+
+            dc.pieChart("#site")
+                .width(400)
+                .height(400)
+                .dimension(bySite)
+                .group(siteGroup)
+                .innerRadius(100)
+                .radius(200)
+
+            dc.renderAll();
+        });}
+    </script>
+</body>
+</html>
