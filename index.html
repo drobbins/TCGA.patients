@@ -13,7 +13,12 @@
     </div>
 
     <div id="site">
+        <span>Tumor Site</span>
         
+    </div>
+
+    <div id="age">
+        <span>Age</span>
     </div>
 
     <!-- scripts and shti -->
@@ -21,7 +26,7 @@
     <script src="http://nickqizhu.github.io/dc.js/js/d3.js"></script>
     <script src="http://square.github.io/crossfilter/crossfilter.v1.min.js"></script>
     <script src="http://nickqizhu.github.io/dc.js/js/dc.js"></script>
-    <script src="https://rawgithub.com/ibl/postmongo/master/postmongo.js"></script>
+    <script src="https://rawgithub.com/ibl/postmongo/79cbd7eaa5dde1de6ab402153aff1bb79d7fc99b/postmongo.js"></script>
     <script>
         db = new postmongo(parm);
 
@@ -56,12 +61,19 @@
             var bySite = pt.bySite = patients.dimension(function (d) { return d.tumor_tissue_site; });
             var siteGroup = pt.siteGroup = bySite.group().reduceCount();
 
+            var byAge = pt.byAge = patients.dimension(function (d) {
+                return d.age_at_initial_pathologic_diagnosis;
+            });
+            var ageGroup = pt.ageGroup = byAge.group().reduceCount();
+
             dc.barChart("#death")
                 .width(800)
                 .height(200)
                 .dimension(byDeath)
                 .group(deathGroup)
-                .x(d3.scale.linear().domain([0, byDeath.top(1)[0].days_to_death]));
+                .x(d3.scale.linear().domain([0, byDeath.top(1)[0].days_to_death]))
+                .elasticY(true)
+                .elasticX(true);
 
             dc.pieChart("#site")
                 .width(400)
@@ -69,7 +81,16 @@
                 .dimension(bySite)
                 .group(siteGroup)
                 .innerRadius(100)
-                .radius(200)
+                .radius(200);
+
+            dc.barChart("#age")
+                .width(800)
+                .height(200)
+                .dimension(byAge)
+                .group(ageGroup)
+                .x(d3.scale.linear().domain([0, 150]))
+                .elasticY(true)
+                .elasticX(true);
 
             dc.renderAll();
         });}
