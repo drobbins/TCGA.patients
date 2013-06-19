@@ -78,24 +78,18 @@
 
                     d3.tsv("http://webrw-sucks.herokuapp.com/?get="+url, function (docs) {
                         database.collection("tcgaPatients", function (err, patients) {
-                            function saveOneDoc (err, response, first) {
-                                var doc, today;
-                                today = (new Date()).toISOString().slice(0,10);
-                                if (!first) incrementPatientCounter();
-                                if (err) {
-                                    console.log(err);
-                                    callback(err);
-                                } else if (docs.length > 0) {
-                                    doc = docs.pop();
-                                    doc.provenance = {};
-                                    doc.provenance.source_url = url;
-                                    doc.provenance.date_retrieved = today;
-                                    patients.insert(doc, saveOneDoc);
-                                } else {
-                                    callback(null);
-                                }
-                            };
-                            saveOneDoc(null, null, true);
+                            today = (new Date()).toISOString().slice(0,10);
+                            docs.forEach(function (doc) {
+                                doc.provenance = {};
+                                doc.provenance.source_url = url;
+                                doc.provenance.date_retrieved = today;
+                            });
+
+                            patients.insert(docs, function (err, response) {
+                                incrementPatientCounter(docs.length);
+                                callback(err, response);
+                            });
+
                         });
                     });
 
@@ -111,11 +105,11 @@
                     });
                 }
 
-                function incrementPatientCounter() {
+                function incrementPatientCounter(n) {
                     var counter, value;
                     counter = document.querySelector("#patient-count");
                     value = parseInt(counter.innerText, 10);
-                    counter.innerText = ++value;
+                    counter.innerText = n ? (value += n) : ++value;
                 }
 
                 function logMessage(message) {
