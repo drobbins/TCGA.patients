@@ -1,82 +1,157 @@
 <!DOCTYPE html>
 <html>
     <head>
-        
+        <link rel="stylesheet" href="css/normalize.css" type="text/css" media="screen" charset="utf-8">
+        <link rel="stylesheet" href="css/foundation.min.css" type="text/css" media="screen" charset="utf-8">
+        <link rel="stylesheet" href="css/main.css">  
     </head>
     <body>
+        <div id="mongo" class="row">
+            <form>
+                <fieldset>
+                    <legend>Ming Credentials</legend>
+
+                    <div class="row">
+                        <div class="large-12 columns">
+                            <label for="">Endpoint</label>
+                            <input type="text" placeholder="http://ifx.path.uab.edu/ming/server" name="endpoint"/>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="large-6 columns">
+                            <label for="username">Username</label>
+                            <input type="text" placeholder="test" name="username" />
+                        </div>
+                        <div class="large-6 columns">
+                            <label for="password">Password</label>
+                            <input type="password" placeholder="Test123" name="password" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="large-2 columns">
+                            <button class="small inline" type="button" onclick="getData()">Go</button>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
+
+            <div class="progress secondary"><span class="meter" style="width: 0%"></span></div>
+
+            <div class="row">
+                <div class="large-3 columns">
+                    <h5>Patients Loaded: <span id="patient-count" class="label secondary">0</span></h5>
+                </div>
+                <div class="large-9 columns">
+                    <h5>Log</h5>
+                    <textarea id="log" rows="50"></textarea>
+                </div>
+            </div>
+
+        </div>
         <script src="http://ifx.path.uab.edu/ming/client.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.1.6/d3.min.js" charset="utf-8"></script>
         <script>
-            var collection, database, endpoint, password, username;
+            function getData() {
+                var collection, database, endpoint, password, username;
 
-            endpoint = "http://ifx.path.uab.edu/ming/server";
-            username = "test";
-            password = "Test123";
-            database = ming({endpoint: endpoint, username: username, password: password});
+                endpoint = document.querySelector("[name=\"endpoint\"]").value || "http://ifx.path.uab.edu/ming/server";
+                username = document.querySelector("[name=\"username\"]").value || "test";
+                password = document.querySelector("[name=\"password\"]").value || "Test123";
+                database = ming({endpoint: endpoint, username: username, password: password});
 
-            function getPatientFileList (callback) {
-                var xhr;
+                function getPatientFileList (callback) {
+                    var xhr;
 
-                xhr = new XMLHttpRequest();
+                    xhr = new XMLHttpRequest();
 
-                xhr.open("POST", "http://agalpha.mathbiol.org/repositories/tcga?query=select%20%3FdiseaseStudy%20%3Fdate%20%3Furl%20%7B%0A%20%20%3Ffile%20tcga%3Aurl%20%3Furl%20.%0A%20%20%0A%20%20%3Ffile%20tcga%3AdiseaseStudy%20%3Fd%20.%0A%20%20%3Fd%20rdfs%3Alabel%20%3FdiseaseStudy%20.%0A%20%20%0A%20%20%3Ffile%20tcga%3Aplatform%20%3Fp%20.%0A%20%20%3Fp%20rdfs%3Alabel%20%22clin%22%20.%0A%20%20%0A%20%20%3Ffile%20tcga%3AlastSeen%20%3Fdate%20.%0A%20%20filter(%3Fdate%20%3E%20%222013-06%22)%20.%0A%20%20%0A%20%20%3Ffile%20rdfs%3Alabel%20%3Fname%20.%0A%20%20filter(contains(%3Fname%2C%20%22patient%22))%20.%0A%7D&queryLn=SPARQL&limit=100&infer=false");
-                xhr.onload = function () {
-                    callback(JSON.parse(this.responseText), this);
-                };
-                xhr.setRequestHeader("Accept", "application/json");
-                xhr.send(null);
-            }
+                    xhr.open("POST", "http://agalpha.mathbiol.org/repositories/tcga?query=select%20%3FdiseaseStudy%20%3Fdate%20%3Furl%20%7B%0A%20%20%3Ffile%20tcga%3Aurl%20%3Furl%20.%0A%20%20%0A%20%20%3Ffile%20tcga%3AdiseaseStudy%20%3Fd%20.%0A%20%20%3Fd%20rdfs%3Alabel%20%3FdiseaseStudy%20.%0A%20%20%0A%20%20%3Ffile%20tcga%3Aplatform%20%3Fp%20.%0A%20%20%3Fp%20rdfs%3Alabel%20%22clin%22%20.%0A%20%20%0A%20%20%3Ffile%20tcga%3AlastSeen%20%3Fdate%20.%0A%20%20filter(%3Fdate%20%3E%20%222013-06%22)%20.%0A%20%20%0A%20%20%3Ffile%20rdfs%3Alabel%20%3Fname%20.%0A%20%20filter(contains(%3Fname%2C%20%22patient%22))%20.%0A%7D&queryLn=SPARQL&limit=100&infer=false");
+                    xhr.onload = function () {
+                        callback(JSON.parse(this.responseText), this);
+                    };
+                    xhr.setRequestHeader("Accept", "application/json");
+                    xhr.send(null);
+                }
 
-            function tsvToMongo (url, callback) {
+                function tsvToMongo (url, callback) {
 
-                d3.tsv("http://webrw-sucks.herokuapp.com/?get="+url, function (docs) {
-                    database.collection("tcgaPatients", function (err, patients) {
-                        function saveOneDoc (err) {
-                            var doc, today;
-                            today = (new Date()).toISOString().slice(0,10);
-                            if (err) {
-                                console.log(err);
-                                callback(err);
-                            } else if (docs.length > 0) {
-                                doc = docs.pop();
-                                doc.provenance = {};
-                                doc.provenance.source_url = url;
-                                doc.provenance.date_retrieved = today;
-                                patients.insert(doc, saveOneDoc);
-                            } else {
-                                callback(null);
-                            }
-                        };
-                        saveOneDoc();
+                    d3.tsv("http://webrw-sucks.herokuapp.com/?get="+url, function (docs) {
+                        database.collection("tcgaPatients", function (err, patients) {
+                            function saveOneDoc (err, response, first) {
+                                var doc, today;
+                                today = (new Date()).toISOString().slice(0,10);
+                                if (!first) incrementPatientCounter();
+                                if (err) {
+                                    console.log(err);
+                                    callback(err);
+                                } else if (docs.length > 0) {
+                                    doc = docs.pop();
+                                    doc.provenance = {};
+                                    doc.provenance.source_url = url;
+                                    doc.provenance.date_retrieved = today;
+                                    patients.insert(doc, saveOneDoc);
+                                } else {
+                                    callback(null);
+                                }
+                            };
+                            saveOneDoc(null, null, true);
+                        });
                     });
-                });
 
-            }
+                }
 
-            function parseSparqlJSON(json) {
-                return json.values.map(function (value) {
-                    var row = {};
-                    json.names.forEach( function (name, index) {
-                        row[name] = value[index];
+                function parseSparqlJSON(json) {
+                    return json.values.map(function (value) {
+                        var row = {};
+                        json.names.forEach( function (name, index) {
+                            row[name] = value[index];
+                        });
+                        return row;
                     });
-                    return row;
-                });
-            }
+                }
 
-            getPatientFileList( function (files) {
-                var rows = parseSparqlJSON(files);
-                function saveOneFile(err) {
-                    if (err) {
-                        console.log(err);
-                    } else if (rows.length > 0) {
-                        tsvToMongo(rows.pop().url.slice(1,-1), saveOneFile);
-                    } else {
-                        console.log("Done");
+                function incrementPatientCounter() {
+                    var counter, value;
+                    counter = document.querySelector("#patient-count");
+                    value = parseInt(counter.innerText, 10);
+                    counter.innerText = ++value;
+                }
+
+                function logMessage(message) {
+                    document.querySelector("#log").value += "\n" + (new Date()).toISOString() + " " + message;
+                }
+
+                logMessage("Querying TCGA Roadmap for patient data files.");
+
+                getPatientFileList( function (files) {
+                    var rows, totalRows;
+
+                    function updateStatusBar() {
+                        document.querySelector("span.meter").style.width = (totalRows - rows.length)/totalRows * 100 + "%";
                     }
-                };
-                saveOneFile();
-            });
 
+                    rows = parseSparqlJSON(files);
+                    totalRows = rows.length;
+
+                    logMessage("Found " + totalRows + " patient data files.");
+
+                    function saveOneFile(err) {
+                        var url;
+                        updateStatusBar();
+                        if (err) {
+                            console.log(err);
+                        } else if (rows.length > 0) {
+                            url = rows.pop().url.slice(1,-1);
+                            logMessage("Loading "+url);
+                            tsvToMongo(url, saveOneFile);
+                        } else {
+                            console.log("Done");
+                        }
+                    };
+                    saveOneFile();
+                });
+            }
 
         </script>
     </body>
