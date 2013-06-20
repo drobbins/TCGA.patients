@@ -48,7 +48,7 @@
         MingDB.collection("tcgaPatientsLite", function (err, collection) {
             if (err) $rootScope.$apply(function () {d.reject(err);});
             else {
-                collection.find({}, {limit:10}, function (err, patients) {
+                collection.find({}, {}, function (err, patients) {
                     $rootScope.$apply(function () {
                         if (err) d.reject(err);
                         else {
@@ -68,9 +68,12 @@
             dimension : function (name, value) {
                 if (!value && dimensions[name]) return $q.when(dimensions[name]);
                 else {
+                    var d = $q.defer();
+                    dimensions[name] = d.promise;
                     return $q.when(filter).then(function (filter) {
                         return filter.dimension(value);
                     }).then(function (dimension) {
+                        d.resolve(dimension);
                         dimensions[name] = dimension;
                         return dimension;
                     });
@@ -80,7 +83,7 @@
             group : function (groupName, dimensionName) {
                 if (groups[groupName]) return $q.when(groups[groupname]);
                 else {
-                    $q.all([filter, this.dimension(dimensionName)]).then(function (vals) {
+                    return $q.all([filter, this.dimension(dimensionName)]).then(function (vals) {
                         var dimension = vals[1];
                         return dimension.group();
                     }).then(function (group) {
@@ -104,15 +107,76 @@
         };
     });
 
-    app.controller("patiently", function ($scope, Patients) {
-        $scope.patients = Patients.filter();
+    app.controller("gender", function ($scope, $q, dc, Patients) {
+        var dimension, group;
+        dimension = Patients.dimension("gender", function (d) { return d.gender; });
+        group = Patients.group("genderGroup", "gender");
+        $q.all([dimension, group]).then(function (things) {
+
+            dc.pieChart("[ng-controller='gender']")
+                .width(210)
+                .height(210)
+                .dimension(things[0])
+                .group(things[1])
+                .innerRadius(25)
+                .radius(100);
+            dc.renderAll();
+
+        });
     });
 
-    app.controller("gender", function ($scope, $window, dc, Patients) {
+    app.controller("vital_status", function ($scope, $q, dc, Patients) {
         var dimension, group;
-        $scope.dimension = Patients.dimension("gender", function (d) { return d.gender; });
-        $scope.group = Patients.group();
-        $window.ss = $scope;
+        dimension = Patients.dimension("vital_status", function (d) { return d.vital_status; });
+        group = Patients.group("vital_statusGroup", "vital_status");
+        $q.all([dimension, group]).then(function (things) {
+
+            dc.pieChart("[ng-controller='vital_status']")
+                .width(210)
+                .height(210)
+                .dimension(things[0])
+                .group(things[1])
+                .innerRadius(25)
+                .radius(100);
+            dc.renderAll();
+
+        });
+    });
+
+    app.controller("race", function ($scope, $q, dc, Patients) {
+        var dimension, group;
+        dimension = Patients.dimension("race", function (d) { return d.race; });
+        group = Patients.group("raceGroup", "race");
+        $q.all([dimension, group]).then(function (things) {
+
+            dc.pieChart("[ng-controller='race']")
+                .width(210)
+                .height(210)
+                .dimension(things[0])
+                .group(things[1])
+                .innerRadius(25)
+                .radius(100);
+            dc.renderAll();
+
+        });
+    });
+
+    app.controller("ethnicity", function ($scope, $q, dc, Patients) {
+        var dimension, group;
+        dimension = Patients.dimension("ethnicity", function (d) { return d.ethnicity; });
+        group = Patients.group("ethnicityGroup", "ethnicity");
+        $q.all([dimension, group]).then(function (things) {
+
+            dc.pieChart("[ng-controller='ethnicity']")
+                .width(210)
+                .height(210)
+                .dimension(things[0])
+                .group(things[1])
+                .innerRadius(25)
+                .radius(100);
+            dc.renderAll();
+
+        });
     });
 
 })();
