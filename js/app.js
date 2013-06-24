@@ -9,7 +9,7 @@
 
     app.factory("MingDB", function (ming) {
         var database, endpoint, password, username;
-        endpoint = "http://ifx.path.uab.edu/ming/server";
+        endpoint = "https://hydrogen.path.uab.edu/ming/server";
         username = "test";
         password = "Test123";
         database = ming({endpoint: endpoint, username: username, password: password});
