@@ -10,14 +10,17 @@
 
     <div class="row">
         <h2>TCGA Patients</h2>
-        <div class="small-3 columns" ng-controller="gender"></div>
-        <div class="small-3 columns" ng-controller="vital_status"></div>
-        <div class="small-3 columns" ng-controller="race"></div>
-        <div class="small-3 columns" ng-controller="ethnicity"></div>
     </div>
 
     <div class="row">
         <div class="small-12 columns" ng-controller="days-to-death"></div>
+    </div>
+
+    <div class="row">
+        <piechart field="gender"></piechart>
+        <piechart field="vital_status"></piechart>
+        <piechart field="race"></piechart>
+        <piechart field="ethnicity"></piechart>
     </div>
 
     <!-- scripts and shti -->

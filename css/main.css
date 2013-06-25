@@ -1,3 +1,10 @@
+.visualization {
+    text-align: center;
+}
+.visualization h5 {
+    text-align: left;
+}
+/* DC charts */
 .dc-chart {
     float: left;
 }

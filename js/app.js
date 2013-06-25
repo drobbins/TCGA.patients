@@ -81,8 +81,10 @@
             },
 
             group : function (groupName, dimensionName, reduceFunctions) {
-                if (groups[groupName]) return $q.when(groups[groupname]);
+                if (groups[groupName]) return $q.when(groups[groupName]);
                 else {
+                    var d = $q.defer();
+                    groups[groupName] = d.promise;
                     return $q.all([filter, this.dimension(dimensionName)]).then(function (vals) {
                         var dimension = vals[1];
                         if (reduceFunctions) {
@@ -91,6 +93,7 @@
                             return dimension.group();
                         }
                     }).then(function (group) {
+                        d.resolve(group);
                         groups[groupName] = group;
                         return group;
                     });
@@ -111,76 +114,30 @@
         };
     });
 
-    app.controller("gender", function ($scope, $q, dc, Patients) {
-        var dimension, group;
-        dimension = Patients.dimension("gender", function (d) { return d.gender; });
-        group = Patients.group("genderGroup", "gender");
-        $q.all([dimension, group]).then(function (things) {
-
-            dc.pieChart("[ng-controller='gender']")
-                .width(210)
-                .height(210)
-                .dimension(things[0])
-                .group(things[1])
-                .innerRadius(25)
-                .radius(100);
-            dc.renderAll();
-
-        });
-    });
-
-    app.controller("vital_status", function ($scope, $q, dc, Patients) {
-        var dimension, group;
-        dimension = Patients.dimension("vital_status", function (d) { return d.vital_status; });
-        group = Patients.group("vital_statusGroup", "vital_status");
-        $q.all([dimension, group]).then(function (things) {
-
-            dc.pieChart("[ng-controller='vital_status']")
-                .width(210)
-                .height(210)
-                .dimension(things[0])
-                .group(things[1])
-                .innerRadius(25)
-                .radius(100);
-            dc.renderAll();
-
-        });
-    });
-
-    app.controller("race", function ($scope, $q, dc, Patients) {
-        var dimension, group;
-        dimension = Patients.dimension("race", function (d) { return d.race; });
-        group = Patients.group("raceGroup", "race");
-        $q.all([dimension, group]).then(function (things) {
-
-            dc.pieChart("[ng-controller='race']")
-                .width(210)
-                .height(210)
-                .dimension(things[0])
-                .group(things[1])
-                .innerRadius(25)
-                .radius(100);
-            dc.renderAll();
-
-        });
-    });
-
-    app.controller("ethnicity", function ($scope, $q, dc, Patients) {
-        var dimension, group;
-        dimension = Patients.dimension("ethnicity", function (d) { return d.ethnicity; });
-        group = Patients.group("ethnicityGroup", "ethnicity");
-        $q.all([dimension, group]).then(function (things) {
-
-            dc.pieChart("[ng-controller='ethnicity']")
-                .width(210)
-                .height(210)
-                .dimension(things[0])
-                .group(things[1])
-                .innerRadius(25)
-                .radius(100);
-            dc.renderAll();
-
-        });
+    app.directive("piechart", function ($q, dc, Patients) {
+        return {
+            restrict : "E",
+            scope : true,
+            replace : true,
+            link : function ($scope, $element, attributes) {
+                var dimension, group, field;
+                $scope.field = field = attributes.field;
+                dimension = Patients.dimension(field, function (d) {return d[field];});
+                group = Patients.group(field+"Group", field);
+                $q.all([dimension, group]).then(function (things) {
+                    dc.pieChart($element[0])
+                        .width(210)
+                        .height(210)
+                        .dimension(things[0])
+                        .group(things[1])
+                        .innerRadius(25)
+                        .radius(100);
+                    dc.renderAll();
+                    dc.redrawAll();
+                });
+            },
+            template : "<div class=\"large-3 columns visualization\"><h5>{{field | uppercase}} <small class=\"filter\"></small></h5></div>"
+        };
     });
 
     app.controller("days-to-death", function ($scope, $q, dc, Patients) {
