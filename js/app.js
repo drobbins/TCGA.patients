@@ -48,7 +48,7 @@
         MingDB.collection("tcgaPatientsLite", function (err, collection) {
             if (err) $rootScope.$apply(function () {d.reject(err);});
             else {
-                collection.find({}, { limit : 500 }, function (err, patients) {
+                collection.find({}, {}, function (err, patients) {
                     $rootScope.$apply(function () {
                         if (err) d.reject(err);
                         else {
