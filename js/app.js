@@ -80,12 +80,16 @@
                 }
             },
 
-            group : function (groupName, dimensionName) {
+            group : function (groupName, dimensionName, reduceFunctions) {
                 if (groups[groupName]) return $q.when(groups[groupname]);
                 else {
                     return $q.all([filter, this.dimension(dimensionName)]).then(function (vals) {
                         var dimension = vals[1];
-                        return dimension.group();
+                        if (reduceFunctions) {
+                            return dimension.group().reduce(reduceFunctions.add, reduceFunctions.remove, reduceFunctions.initial);
+                        } else {
+                            return dimension.group();
+                        }
                     }).then(function (group) {
                         groups[groupName] = group;
                         return group;
