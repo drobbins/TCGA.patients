@@ -14,14 +14,15 @@
     </div>
 
     <div class="row">
-        <div class="small-12 columns" ng-controller="days-to-death"></div>
-    </div>
-
-    <div class="row">
         <piechart field="gender"></piechart>
         <piechart field="vital_status"></piechart>
         <piechart field="race"></piechart>
         <piechart field="ethnicity"></piechart>
+    </div>
+
+    <div class="row">
+        <barchart field="days_to_death"></barchart>
+        <barchart field="age_at_initial_pathologic_diagnosis"></barchart>
     </div>
 
     <!-- scripts and shti -->
