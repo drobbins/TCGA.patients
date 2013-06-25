@@ -48,7 +48,7 @@
         MingDB.collection("tcgaPatientsLite", function (err, collection) {
             if (err) $rootScope.$apply(function () {d.reject(err);});
             else {
-                collection.find({}, {}, function (err, patients) {
+                collection.find({}, { limit : 500 }, function (err, patients) {
                     $rootScope.$apply(function () {
                         if (err) d.reject(err);
                         else {
@@ -183,4 +183,38 @@
         });
     });
 
+    app.controller("days-to-death", function ($scope, $q, dc, Patients) {
+        var dimension, group, reductor;
+        reductor = {
+            add : function reduceAdd(p, v) {
+              return v.d2d === 0 ? p : p + 1;
+            },
+
+            remove : function reduceRemove(p, v) {
+              return v.d2d === 0 ? p : p - 1;
+            },
+
+            initial : function reduceInitial() {
+              return 0;
+            }
+        };
+        dimension = Patients.dimension("days-to-death", function (d) {
+            var d2d = parseInt(d.days_to_death, 10);
+            d.d2d = isNaN(d2d) ? 0 : d2d;
+            return d.d2d;});
+        group = Patients.group("days-to-deathGroup", "days-to-death", reductor);
+        $q.all([dimension, group]).then(function (things) {
+
+            dc.barChart("[ng-controller='days-to-death']")
+                .width(970)
+                .height(210)
+                .dimension(things[0])
+                .group(things[1])
+                .x(d3.scale.linear().domain([0,things[0].top(1).d2d]))
+                .elasticX(true)
+                .elasticY(true);
+            dc.renderAll();
+
+        });
+    });
 })();
