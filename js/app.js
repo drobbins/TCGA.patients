@@ -140,38 +140,51 @@
         };
     });
 
-    app.controller("days-to-death", function ($scope, $q, dc, Patients) {
-        var dimension, group, reductor;
-        reductor = {
-            add : function reduceAdd(p, v) {
-              return v.d2d === 0 ? p : p + 1;
-            },
+    app.directive("barchart", function ($q, dc, Patients) {
+        return {
+            restrict : "E",
+            scope : true,
+            replace : true,
+            link : function ($scope, $element, attributes) {
+                var dimension, group, field, reductor, accessor;
+                $scope.field = field = attributes.field;
 
-            remove : function reduceRemove(p, v) {
-              return v.d2d === 0 ? p : p - 1;
-            },
+                reductor = {
+                    add : function reduceAdd(p, v) {
+                      return v["_"+field] === 0 ? p : p + 1;
+                    },
 
-            initial : function reduceInitial() {
-              return 0;
-            }
+                    remove : function reduceRemove(p, v) {
+                      return v["_"+field] === 0 ? p : p - 1;
+                    },
+
+                    initial : function reduceInitial() {
+                      return 0;
+                    }
+                };
+
+                dimension = Patients.dimension(field, function (d) {
+                    var val = parseInt(d[field], 10);
+                    d["_"+field] = isNaN(val) ? 0 : val;
+                    return d["_"+field];
+                });
+                group = Patients.group(field+"Group", field, reductor);
+
+                $q.all([dimension, group]).then(function (things) {
+                    dc.barChart("div[field="+field+"]")
+                        .width(475)
+                        .height(210)
+                        .dimension(things[0])
+                        .group(things[1])
+                        .x(d3.scale.linear().domain([things[0].bottom(1)["_"+field],things[0].top(1)["_"+field]]))
+                        .elasticX(true)
+                        .elasticY(true);
+                    dc.renderAll();
+                    dc.redrawAll();
+                });
+            },
+            template : "<div class=\"large-6 columns visualization\"><h5>{{field | uppercase}} <small class=\"filter\"></small></h5></div>"
         };
-        dimension = Patients.dimension("days-to-death", function (d) {
-            var d2d = parseInt(d.days_to_death, 10);
-            d.d2d = isNaN(d2d) ? 0 : d2d;
-            return d.d2d;});
-        group = Patients.group("days-to-deathGroup", "days-to-death", reductor);
-        $q.all([dimension, group]).then(function (things) {
-
-            dc.barChart("[ng-controller='days-to-death']")
-                .width(970)
-                .height(210)
-                .dimension(things[0])
-                .group(things[1])
-                .x(d3.scale.linear().domain([0,things[0].top(1).d2d]))
-                .elasticX(true)
-                .elasticY(true);
-            dc.renderAll();
-
-        });
     });
-})();
+
+ })();
