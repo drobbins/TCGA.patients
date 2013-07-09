@@ -188,3 +188,10 @@
     });
 
  })();
+
+tcgaptdb = {};
+tcgaptdb.buildUI = function (id) {
+    var el = document.querySelector("#"+id);
+    el.innerHTML = "<div>TCGA Patients</div><piechart field=\"gender\"></piechart><piechart field=\"vital_status\"></piechart>";
+    angular.bootstrap(el, ["tcga-patient-dashboard"]);
+};
